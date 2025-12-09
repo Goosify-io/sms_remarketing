@@ -1,12 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
+import logging
 from ..database import get_db
 from ..models import Client, Lead
 from ..schemas import LeadCreate, LeadResponse, LeadUpdate
 from ..middleware import get_current_client
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.post("/", response_model=LeadResponse, status_code=status.HTTP_201_CREATED)
@@ -21,6 +23,13 @@ def create_lead(
     db.commit()
     db.refresh(lead)
 
+    # Process NEW_LEAD triggers
+    from ..workers import process_new_lead_triggers
+    try:
+        process_new_lead_triggers(lead.id)
+        logger.info(f"Processed NEW_LEAD triggers for lead {lead.id}")
+    except Exception as e:
+        logger.error(f"Failed to process NEW_LEAD triggers for lead {lead.id}: {e}", exc_info=True)
 
     return lead
 
