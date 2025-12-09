@@ -59,6 +59,21 @@ class SMSService:
         client.deduct_credits(1)
 
         # Queue for async sending or send immediately
+        if async_send:
+            from .queue_service import queue_service
+
+            if queue_service.is_available():
+                # Queue for background processing
+                message.status = MessageStatus.QUEUED
+                db.commit()
+                db.refresh(message)
+
+                job_id = queue_service.enqueue_sms(message.id)
+                logger.info(f"Message {message.id} queued for async sending (job: {job_id})")
+                return message
+            else:
+                # Redis unavailable, fall through to sync sending
+                logger.warning("Redis unavailable, sending synchronously")
 
         # Send synchronously (either requested or Redis unavailable)
         success, twilio_sid, error_message = twilio_service.send_sms(

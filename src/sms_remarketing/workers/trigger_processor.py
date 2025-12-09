@@ -60,7 +60,7 @@ def process_new_lead_triggers(lead_id: int):
                         lead=lead,
                         content=content,
                         template=template,
-                        
+                        async_send=False,
                     )
                     logger.info(
                         f"NEW_LEAD trigger {trigger.id} sent message {message.id} to lead {lead.id}"
@@ -144,7 +144,7 @@ def process_lead_age_triggers():
                         lead=lead,
                         content=content,
                         template=template,
-                        
+                        async_send=False,
                     )
                     logger.info(
                         f"LEAD_AGE trigger {trigger.id} sent message {message.id} to lead {lead.id} ({days} days old)"
