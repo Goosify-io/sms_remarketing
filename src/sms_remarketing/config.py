@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     api_port: int = 8000
     debug: bool = False
     secret_key: str
+    admin_api_key: str
 
     class Config:
         env_file = ".env"

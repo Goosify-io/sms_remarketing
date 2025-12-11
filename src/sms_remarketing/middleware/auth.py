@@ -3,8 +3,10 @@ from fastapi.security import APIKeyHeader
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import Client
+from ..config import settings
 
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+admin_api_key_header = APIKeyHeader(name="X-Admin-API-Key", auto_error=False)
 
 
 async def get_current_client(
@@ -33,3 +35,22 @@ async def get_current_client(
         )
 
     return client
+
+
+async def verify_admin(admin_key: str = Depends(admin_api_key_header)) -> bool:
+    """
+    Authenticate admin using admin API key from X-Admin-API-Key header.
+    Returns True if authenticated or raises 401/403 error.
+    """
+    if not admin_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Admin API key is missing. Provide it in X-Admin-API-Key header.",
+        )
+
+    if admin_key != settings.admin_api_key:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Invalid admin API key"
+        )
+
+    return True

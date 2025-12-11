@@ -4,16 +4,21 @@ from typing import List
 from ..database import get_db
 from ..models import Client
 from ..schemas import ClientCreate, ClientResponse, ClientUpdate
+from ..middleware.auth import verify_admin
 
 router = APIRouter()
 
 
 @router.post("/", response_model=ClientResponse, status_code=status.HTTP_201_CREATED)
-def create_client(client_data: ClientCreate, db: Session = Depends(get_db)):
+def create_client(
+    client_data: ClientCreate,
+    db: Session = Depends(get_db),
+    _admin: bool = Depends(verify_admin),
+):
     """
     Create a new client account.
     Returns the client with generated API key.
-    Note: This endpoint is unprotected for initial setup. In production, add admin authentication.
+    Requires admin authentication via X-Admin-API-Key header.
     """
     # Check if email already exists
     existing = db.query(Client).filter(Client.email == client_data.email).first()
@@ -36,20 +41,27 @@ def create_client(client_data: ClientCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/", response_model=List[ClientResponse])
-def list_clients(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def list_clients(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    _admin: bool = Depends(verify_admin),
+):
     """
     List all clients.
-    Note: In production, add admin authentication.
+    Requires admin authentication via X-Admin-API-Key header.
     """
     clients = db.query(Client).offset(skip).limit(limit).all()
     return clients
 
 
 @router.get("/{client_id}", response_model=ClientResponse)
-def get_client(client_id: int, db: Session = Depends(get_db)):
+def get_client(
+    client_id: int, db: Session = Depends(get_db), _admin: bool = Depends(verify_admin)
+):
     """
     Get a specific client.
-    Note: In production, add admin authentication.
+    Requires admin authentication via X-Admin-API-Key header.
     """
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
@@ -61,11 +73,14 @@ def get_client(client_id: int, db: Session = Depends(get_db)):
 
 @router.put("/{client_id}", response_model=ClientResponse)
 def update_client(
-    client_id: int, client_data: ClientUpdate, db: Session = Depends(get_db)
+    client_id: int,
+    client_data: ClientUpdate,
+    db: Session = Depends(get_db),
+    _admin: bool = Depends(verify_admin),
 ):
     """
     Update a client.
-    Note: In production, add admin authentication.
+    Requires admin authentication via X-Admin-API-Key header.
     """
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
@@ -83,10 +98,12 @@ def update_client(
 
 
 @router.delete("/{client_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_client(client_id: int, db: Session = Depends(get_db)):
+def delete_client(
+    client_id: int, db: Session = Depends(get_db), _admin: bool = Depends(verify_admin)
+):
     """
     Delete a client.
-    Note: In production, add admin authentication.
+    Requires admin authentication via X-Admin-API-Key header.
     """
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
